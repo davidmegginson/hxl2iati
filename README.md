@@ -19,7 +19,7 @@ Attributes (starting with "+") may appear in any order within a hashtag spec. Ad
 
 #org+impl
 
-#sector+name
+#sector
 
 #activity
 
