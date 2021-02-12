@@ -12,6 +12,6 @@ if __name__ == "__main__":
         recipient_country_name="Somalia",
         recipient_country_code="SO",
         default_start_date="2020-11-01",
-        default_update_date="2020-11-30",
+        default_update_datetime="2020-11-30T23:59:59-00:00",
     )
     converter.convert(sys.argv[1], allow_local=True)

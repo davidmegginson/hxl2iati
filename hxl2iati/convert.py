@@ -21,12 +21,12 @@ class HXL2IATI:
     """ Required columns to do this processing """
 
     
-    def __init__ (self, output, reporting_org_name, recipient_country_name, recipient_country_code, default_start_date, default_update_date):
+    def __init__ (self, output, reporting_org_name, recipient_country_name, recipient_country_code, default_start_date, default_update_datetime):
         self.reporting_org_name = reporting_org_name
         self.recipient_country_name = recipient_country_name
         self.recipient_country_code = recipient_country_code
         self.default_start_date = default_start_date
-        self.default_update_date = default_update_date
+        self.default_update_datetime = default_update_datetime
 
         self.xmlout = hxl2iati.writer.XMLWriter(output=output)
 
@@ -64,7 +64,7 @@ class HXL2IATI:
         self.xmlout.start_block("iati-activity", {
             "xml:lang": "en",
             "default-currency": "USD",
-            "last-updated-datetime": self.default_update_date,
+            "last-updated-datetime": self.default_update_datetime,
             "humanitarian": "1",
         })
 
