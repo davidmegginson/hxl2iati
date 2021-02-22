@@ -1,5 +1,7 @@
 import datetime, dateutil, hashlib, hxl, hxl2iati.writer, re
 
+from hxl2iati.mapping import DAC_SECTOR_INFO, CLUSTER_INFO
+
 class ConversionException (Exception):
 
     def __init__(self, message):
@@ -7,7 +9,6 @@ class ConversionException (Exception):
 
 
 class HXL2IATI:
-
     
     REQUIRED_HASHTAGS = [
         "#org+impl",
@@ -126,10 +127,18 @@ class HXL2IATI:
         }, self.recipient_country_name)
 
         if row.get("#sector"):
-            # TODO add sector code
-            self.do_narrative("sector", {
-                "code": "TODO",
-            }, row.get("#sector"))
+            info = CLUSTER_INFO.get(row.get("#sector"))
+            if info:
+                self.do_narrative("sector", {
+                    "code": info["code"],
+                    "vocabulary": "10",
+                }, info["name_en"])
+                for dac_code in info["dac_codes"]:
+                    dac_info = DAC_SECTOR_INFO[dac_code]
+                    self.do_narrative("sector", {
+                        "code": dac_code,
+                        "vocabulary": "1",
+                    }, dac_info["name_en"])
 
         self.xmlout.end_block("iati-activity")
 
