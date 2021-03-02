@@ -1,6 +1,6 @@
 import datetime, dateutil, hashlib, hxl, hxl2iati.writer, re
 
-from hxl2iati.mapping import DAC_SECTOR_INFO, CLUSTER_INFO
+from hxl2iati.mapping import ORG_TYPES, DAC_SECTOR_INFO, CLUSTER_INFO
 
 class ConversionException (Exception):
 
@@ -69,12 +69,12 @@ class HXL2IATI:
             "humanitarian": "1",
         })
 
-        self.xmlout.simple_element("iati-identifier", content=make_identifier(row))
+        self.xmlout.simple_element("iati-identifier", content=make_activity_id(row))
 
         # TODO make reporting org configurable
         self.do_narrative("reporting-org", {
-            "ref": "TODO",
-            "type": "TODO",
+            "ref": make_org_id(self.reporting_org_name),
+            "type": "40", # OCHA is a multilateral; TODO - remove hard-coding
         }, self.reporting_org_name)
 
         if row.get("#activity"):
@@ -84,40 +84,42 @@ class HXL2IATI:
         if row.get("#org+impl"):
             self.do_narrative("participating-org", {
                 "role": "4",
-                "ref": "TODO",
-                "type": "TODO",
+                "ref": make_org_id(row.get("#org+impl")),
+                "type": "90", # we don't know
             }, row.get("#org+impl"))
 
-        # TODO add org type
         if row.get("#org+prog"):
             self.do_narrative("participating-org", {
                 "role": "2",
-                "ref": "TODO",
-                "type": "TODO",
+                "ref": make_org_id(row.get("#org+prog")),
+                "type": ORG_TYPES.get(row.get("#org+prog+type"), "90"), # we have an org type for the programming org
             }, row.get("#org+prog"))
 
         if row.get("#org+funding"):
             self.do_narrative("participating-org", {
                 "role": "1",
-                "ref": "TODO",
-                "type": "TODO",
+                "ref": make_org_id(row.get("#org+funding")),
+                "type": "90", # we don't know
             }, row.get("#org+funding"))
 
         self.xmlout.simple_element("activity-status", {
             "code": row.get("#status", default=""),
         })
 
-        d = fix_date(row.get("#date+start"), self.default_start_date)
-        if d:
+        start_date = fix_date(row.get("#date+start"), self.default_start_date)
+        end_date = fix_date(row.get("#date+end"), self.default_start_date)
+        if start_date and end_date and start_date > end_date:
+            start_date, end_date = end_date, start_date
+
+        if start_date:
             self.xmlout.simple_element("activity-date", {
-                "iso-date": d,
+                "iso-date": start_date,
                 "type": "2",
             })
 
-        d = fix_date(row.get("#date+end"), self.default_start_date)
-        if d:
+        if end_date:
             self.xmlout.simple_element("activity-date", {
-                "iso-date": d,
+                "iso-date": end_date,
                 "type": "4",
             })
 
@@ -125,6 +127,30 @@ class HXL2IATI:
             "code": self.recipient_country_code,
             "percentage": "100",
         }, self.recipient_country_name)
+
+        if row.get("#adm1+name"):
+            self.xmlout.start_block("location")
+            self.xmlout.simple_element("location-reach", {"code": "1"})
+            self.do_narrative("name", {}, row.get("#adm1+name"))
+            self.xmlout.simple_element("location-class", {"code": "1"})
+            self.xmlout.simple_element("feature-designation", {"code": "ADM1"})
+            self.xmlout.end_block("location")
+
+        if row.get("#adm2+name"):
+            self.xmlout.start_block("location")
+            self.xmlout.simple_element("location-reach", {"code": "1"})
+            self.do_narrative("name", {}, row.get("#adm2+name"))
+            self.xmlout.simple_element("location-class", {"code": "1"})
+            self.xmlout.simple_element("feature-designation", {"code": "ADM2"})
+            self.xmlout.end_block("location")
+
+        if row.get("#loc+name"):
+            self.xmlout.start_block("location")
+            self.xmlout.simple_element("location-reach", {"code": "1"})
+            self.do_narrative("name", {}, row.get("#loc+name"))
+            self.xmlout.simple_element("location-class", {"code": "2"})
+            self.xmlout.simple_element("feature-designation", {"code": "PPLS"})
+            self.xmlout.end_block("location")
 
         if row.get("#sector"):
             info = CLUSTER_INFO.get(row.get("#sector"))
@@ -173,10 +199,15 @@ def check_hashtags (source, hashtags):
         raise ConversionException("Missing column(s): {}".format(", ".join(missing_columns)))
 
 
-def make_identifier (row):
+def make_activity_id (row):
     # FIXME not really reliable
     hash = hashlib.md5("|||".join(row.values).encode("utf-8"))
-    return "OCHA-3W-SOM-{}".format(hash.hexdigest())
+    return "X-OCHA-3W-SOM-{}".format(hash.hexdigest())
+
+def make_org_id (org):
+    return "X-OCHA-ORG-{}".format(
+        re.sub("[^A-Z0-9]+", "_", org.strip().upper())
+    )
 
 
 # end

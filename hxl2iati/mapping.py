@@ -1,3 +1,19 @@
+ORG_TYPES = {
+    "Both": "21", # used only for ACTED, for some reason
+    "GOVERNMENT": "10",
+    "INGO": "21",
+    "International NGO": "21",
+    "NGO": "22",
+    "NNGO": "22",
+    "National NGO": "",
+    "OTHER": "90",
+    "UN": "40",
+    "UN agency": "40",
+    "UNHCR": "40",
+}
+""" Map to IATI org types. Source: https://iatistandard.org/en/iati-standard/201/codelists/organisationtype/ """
+
+
 DAC_SECTOR_INFO = {
     "72010": {
         "name_en": "Material relief assistance and services",
